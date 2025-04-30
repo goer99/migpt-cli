@@ -7,7 +7,7 @@ env:
   IMAGE_NAME: migpt-server-new
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -16,11 +16,27 @@ jobs:
       run: |
         set -e
         docker build . --file Dockerfile --tag image
-        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
-    - name: Upload firmware directory
-      uses: actions/upload-artifact@main
-      if: steps.build.outputs.status == 'success' && !cancelled()
-      with:
-        name: ${{ env.IMAGE_NAME }}
-        path: ${{ env.FIRMWARE }}
+  push:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Log into registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
+    - name: Build image
+      run: docker build . --file Dockerfile --tag image
+
+    - name: Push image
+      run: |
+        IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
+        VERSION=$(date "+%Y.%m.%d")
+        echo IMAGE_ID=$IMAGE_ID
+        echo VERSION=$VERSION
+        docker tag image $IMAGE_ID:$VERSION
+        docker push $IMAGE_ID:$VERSION
+        docker tag $IMAGE_ID:$VERSION $IMAGE_ID:latest
+        docker push $IMAGE_ID:latest
