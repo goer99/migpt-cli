@@ -1,17 +1,14 @@
-name: Docker Image CI
+name: Build migpt-server-new image
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch: 
+
+env:
+  IMAGE_NAME: migpt-server-new
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
