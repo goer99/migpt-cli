@@ -7,36 +7,23 @@ env:
   IMAGE_NAME: migpt-server-new
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      id: build
-      run: |
-        set -e
-        docker build . --file Dockerfile --tag image
-
-  push:
-    needs: test
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Log into registry
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
-
-    - name: Build image
-      run: docker build . --file Dockerfile --tag image
-
-    - name: Push image
-      run: |
-        IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
-        VERSION=$(date "+%Y.%m.%d")
-        echo IMAGE_ID=$IMAGE_ID
-        echo VERSION=$VERSION
-        docker tag image $IMAGE_ID:$VERSION
-        docker push $IMAGE_ID:$VERSION
-        docker tag $IMAGE_ID:$VERSION $IMAGE_ID:latest
-        docker push $IMAGE_ID:latest
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64/v8
+          tags: goer99/migpt-server-new:latest
