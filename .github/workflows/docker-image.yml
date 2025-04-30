@@ -1,0 +1,30 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      id: build
+      run: |
+        set -e
+        docker build . --file Dockerfile --tag image
+        docker run --rm image -version
+	      echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+
+    - name: Upload firmware directory
+      uses: actions/upload-artifact@main
+      if: steps.build.outputs.status == 'success' && !cancelled()
+      with:
+        name: ${{ env.IMAGE_NAME }}
+        path: ${{ env.FIRMWARE }}
