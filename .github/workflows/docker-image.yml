@@ -16,7 +16,6 @@ jobs:
       run: |
         set -e
         docker build . --file Dockerfile --tag image
-        docker run --rm image -version
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
     - name: Upload firmware directory
